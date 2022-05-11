@@ -6,6 +6,15 @@ from src import conv_onet
 
 method_dict = {
     'conv_onet': conv_onet
+    
+    #sam start:
+    #conv_net has 4 methods: config, generation, training, models
+    #config: get model: return the occupancy network model, set the decoder and encoder, will use conv_onet.model.ConvolutionalOccupancyNetwork
+    #        get trainer: return the trainer object, set model, optimizer, input_type, threshold and eval_sample, will use conv_onet.training.Trainer
+    #        get generator: return the generator object, set thershold, resolution0, upsampling)step, use_sampling, refine_step,
+    #                       simplify_nfaces, input_type, padding, vol_info, vol_bound, will use conv_onet.generation.Genrator3D
+    #        get_data_fields: return the data_fields (data_field is a dict of all the dict parameters), will use src.data.fields
+     
 }
 
 
@@ -19,7 +28,7 @@ def load_config(path, default_path=None):
     '''
     # Load configuration from file itself
     with open(path, 'r') as f:
-        cfg_special = yaml.load(f)
+        cfg_special = yaml.load(f, Loader = yaml.FullLoader)
 
     # Check if we should inherit from a config
     inherit_from = cfg_special.get('inherit_from')
@@ -30,7 +39,7 @@ def load_config(path, default_path=None):
         cfg = load_config(inherit_from, default_path)
     elif default_path is not None:
         with open(default_path, 'r') as f:
-            cfg = yaml.load(f)
+            cfg = yaml.load(f, Loader = yaml.FullLoader)
     else:
         cfg = dict()
 
@@ -107,12 +116,13 @@ def get_dataset(mode, cfg, return_idx=False):
     ''' Returns the dataset.
 
     Args:
-        model (nn.Module): the model which is used
+        model (nn.Module): the model which is used                # sam : Now there is no model in args
+        mode (str): which split the dataset is, train/val/test
         cfg (dict): config dictionary
         return_idx (bool): whether to include an ID field
     '''
-    method = cfg['method']
-    dataset_type = cfg['data']['dataset']
+    method = cfg['method'] # sam: conv_onet
+    dataset_type = cfg['data']['dataset'] # sam: dataset type, related to data loader
     dataset_folder = cfg['data']['path']
     categories = cfg['data']['classes']
 
@@ -157,14 +167,14 @@ def get_inputs_field(mode, cfg):
         mode (str): the mode which is used
         cfg (dict): config dictionary
     '''
-    input_type = cfg['data']['input_type']
+    input_type = cfg['data']['input_type']  # sam: img / pointcloud
 
     if input_type is None:
         inputs_field = None
     elif input_type == 'pointcloud':
         transform = transforms.Compose([
-            data.SubsamplePointcloud(cfg['data']['pointcloud_n']),
-            data.PointcloudNoise(cfg['data']['pointcloud_noise'])
+            data.SubsamplePointcloud(cfg['data']['pointcloud_n']), # sam : subsampling by randomly choose points
+            data.PointcloudNoise(cfg['data']['pointcloud_noise'])  # sam : add noise to a point cloud by randn * standard deviation(int)
         ])
         inputs_field = data.PointCloudField(
             cfg['data']['pointcloud_file'], transform,

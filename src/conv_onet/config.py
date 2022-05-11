@@ -173,10 +173,10 @@ def get_data_fields(mode, cfg):
     fields = {}
     if cfg['data']['points_file'] is not None:
         if input_type != 'pointcloud_crop':
-            fields['points'] = data.PointsField(
-                cfg['data']['points_file'], points_transform,
-                unpackbits=cfg['data']['points_unpackbits'],
-                multi_files=cfg['data']['multi_files']
+            fields['points'] = data.PointsField(                # sam: points_file : points file directory name
+                cfg['data']['points_file'], points_transform,   # points_transform: points subsample number
+                unpackbits=cfg['data']['points_unpackbits'],    # points_unpackbits: TODO: wut is this? bool
+                multi_files=cfg['data']['multi_files']          # multi_files: int, the num of point files used together
             )
         else:
             fields['points'] = data.PatchPointsField(

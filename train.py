@@ -1,8 +1,11 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+
 import torch
 import torch.optim as optim
 from tensorboardX import SummaryWriter
 import numpy as np
-import os
+
 import argparse
 import time, datetime
 import matplotlib; matplotlib.use('Agg')
@@ -23,7 +26,7 @@ parser.add_argument('--exit-after', type=int, default=-1,
                          'with exit code 2.')
 
 args = parser.parse_args()
-cfg = config.load_config(args.config, 'configs/default.yaml')
+cfg = config.load_config(args.config, 'configs/default.yaml') # sam: combine the distinct config and default config
 is_cuda = (torch.cuda.is_available() and not args.no_cuda)
 device = torch.device("cuda" if is_cuda else "cpu")
 # Set t0
@@ -36,8 +39,8 @@ backup_every = cfg['training']['backup_every']
 vis_n_outputs = cfg['generation']['vis_n_outputs']
 exit_after = args.exit_after
 
-model_selection_metric = cfg['training']['model_selection_metric']
-if cfg['training']['model_selection_mode'] == 'maximize':
+model_selection_metric = cfg['training']['model_selection_metric'] # sam: pc/pc_crop: iou, voxel: loss
+if cfg['training']['model_selection_mode'] == 'maximize': # sam: pc/pc_crop: max, voxel: min # TODO: need figure out wut these two config use for
     model_selection_sign = 1
 elif cfg['training']['model_selection_mode'] == 'minimize':
     model_selection_sign = -1
@@ -49,7 +52,7 @@ else:
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 
-shutil.copyfile(args.config, os.path.join(out_dir, 'config.yaml'))
+shutil.copyfile(args.config, os.path.join(out_dir, 'config.yaml')) # copy content in args.config into 'out_dir/config.yaml'
 
 # Dataset
 train_dataset = config.get_dataset('train', cfg)
@@ -79,7 +82,7 @@ for i in range(len(vis_loader)):
     data_vis = next(iterator)
     idx = data_vis['idx'].item()
     model_dict = val_dataset.get_model_dict(idx)
-    category_id = model_dict.get('category', 'n/a')
+    category_id = model_dict.get('category', 'n/a') # sam : find the value of 'category', or else return 'n/a'
     category_name = val_dataset.metadata[category_id].get('name', 'n/a')
     category_name = category_name.split(',')[0]
     if category_name == 'n/a':
