@@ -263,6 +263,32 @@
                 generate_plane_features: unet
                 generate_grid_features: unet3d
 
+        ResnetBlockFC:
+            size_in (256)
+            size_out (256 / 128)
+            size_h = min(size_in, size_out)
+
+            self.fc_0 = nn.Linear(size_in, size_h)
+            self.fc_1 = nn.Linear(size_h, size_out)
+            self.actvn = nn.ReLU()
+
+            if size_in != size_out:
+                self.shortcut:
+                    nn.Linear(size_in (256), size_out (256))
+                
+            net:
+                x -> nn.ReLU -> nn.Linear(256, 256 / 128) -> net
+                net -> nn.ReLU -> nn.Linear(256 / 128, 256/ 128) -> dx
+                if size_in != size_out:
+                    x -> nn.Linear(256, 128) -> x_s
+                else:
+                    x -> x_s
+            final_out: x_s + dx
+        
+        UNet3D:
+            in_channels: 32
+            out_channels: 32
+            
                 
 # Generator (code to generate mesh)
     config.get_generator
