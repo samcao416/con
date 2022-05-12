@@ -288,7 +288,123 @@
         UNet3D:
             in_channels: 32
             out_channels: 32
+            final_sigma: True
+            f_maps: 32
+            layer_order: 'gcr'
+            basic_module: DoubleConv
+            num_groups: 8
+            num_levels: 3
+            is_segmentation: True
             
+            inherited from Abstract3DUNet:
+                self.testing: False
+                f_maps: function number_of_features_per_level(f_maps, num_levels):
+                    [32*2**0, 32*2**1, 32*2**2] = [32, 64, 128]
+                encoder net:
+                   {
+                       {
+                            conv1_in_channels: 32
+                            conv1_out_channels: 32
+                            padding: 1
+
+                            conv2_in_channels: 32
+                            conv2_out_channels: 32
+                            padding: 1
+
+                            nn.GroupNorm(num_groups = 8, num_channels = 32)
+                            nn.Conv3d(32, 32, kernel_size=3, padding=1, bias = False)
+                            nn.ReLU
+                            nn.GroupNorm(num_groups = 8, num_channels = 32)
+                            nn.Conv3d(32, 32, kernel_size=3, padding=1, bias = False)
+                            nn.ReLU
+                       }
+                       {
+                           con1_in_channels: 32
+                           con1_out_channels: 32
+                           padding:1
+
+                           conv2_in_channels: 32
+                           conv2_out_channels: 64
+                           padding:1
+
+                           nn.MaxPool3d(2, 2, 2)
+                           nn.GroupNorm(num_groups = 8, num_channels = 32)
+                           nn.Conv3d(32, 32, kernel_size=3, padding=1, bias=False)
+                           nn.ReLU
+                           nn.GroupNorm(num_groups = 8, num_channels = 32)
+                           nn.Conv3d(32, 32, kernel_size=3, padding=1, bias=False)
+                           nn.ReLU
+                       }
+                       {
+                           con1_in_channels: 64
+                           con1_out_channls: 64
+                           padding: 1
+
+                           conv2_in_channels: 64
+                           conv2_out_channels: 128
+                           padding: 1
+
+                           nn.MaxPool3d(2, 2, 2)
+                           nn.GroupNorm(num_groups=8, num_channels=64)
+                           nn.Conv3d(64, 64, kernel_size=3, padding=1, bias=False)
+                           nn.ReLU
+                           nn.GroupNorm(num_groups=8, num_channels=64)
+                           nn.Conv3d(64, 128, kernel_size=3, padding=1, bias=False)
+                       }
+                   }
+                
+                reversed_f_maps:
+                    [128, 64, 32]
+                decoder:
+                    {
+                        in_feature_num: 128+64=192
+                        out_feature_num:64
+                        self.upsampling: 
+                            output_size: encoder_features.size()[2:0]
+                            F.interpolate(x, output_size, mode(bilinear / nearest))
+                        self.joining: encoder_features + x
+
+                        conv1_in_channels: 192
+                        conv1_out_channels: 64
+                        conv2_in_channels: 64
+                        conv2_out_channels: 64
+
+                        x + encoder_feautures -> F.interpolate(x, output_size, mode) -> x
+                        x + encoder_features -> x
+                        nn.GroupNorm(num_groups=8, num_channels=192)
+                        nn.Conv3d(192, 64, kernel_size=3, padding=1, bias=False)
+                        nn.ReLU
+                        nn.GroupNorm(num_groups=8, num_channels=64)
+                        nn.Conv3d(64, 64,  kernel_size=3, padding=1, bias=False)
+                        nn.ReLU
+                    }
+                    {
+                        in_feature_num: 64+32=96
+                        out_feature_num:32
+                        self.upsampling: 
+                            output_size: encoder_features.size()[2:0]
+                            F.interpolate(x, output_size, mode(bilinear / nearest))
+                        self.joining: encoder_features + x
+
+                        conv1_in_channels: 96
+                        conv1_out_channels: 32
+                        conv2_in_channels: 32
+                        conv2_out_channels: 32
+
+                        x + encoder_feautures -> F.interpolate(x, output_size, mode) -> x
+                        x + encoder_features -> x
+                        nn.GroupNorm(num_groups=8, num_channels=192)
+                        nn.Conv3d(192, 64, kernel_size=3, padding=1, bias=False)
+                        nn.ReLU
+                        nn.GroupNorm(num_groups=8, num_channels=64)
+                        nn.Conv3d(64, 64, kernel_size=3, padding=1, bias=False)
+                        nn.ReLU0
+                    }
+                self.final_conv: nn.Conv3d(32, 32, 1)
+                self.final_activation: n.Sigmoid (Not in the network for the reason that)
+        
+        UNet:
+        
                 
 # Generator (code to generate mesh)
     config.get_generator

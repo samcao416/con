@@ -319,7 +319,7 @@ class Upsampling(nn.Module):
             self.upsample = nn.ConvTranspose3d(in_channels, out_channels, kernel_size=kernel_size, stride=scale_factor,
                                                padding=1)
         else:
-            self.upsample = partial(self._interpolate, mode=mode)
+            self.upsample = partial(self._interpolate, mode=mode) # sam: change default value of mode into bilinear / nearest
 
     def forward(self, encoder_features, x):
         output_size = encoder_features.size()[2:]
